@@ -160,3 +160,9 @@ export function pqed(msg: string, a: any,
   }
   return false;
 }
+
+export function unf(msg: string, a: any) {
+  if (a !== undefined) {
+    cry(`${msg} != undefined got`, a);
+  }
+}
