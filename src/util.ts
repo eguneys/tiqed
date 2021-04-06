@@ -2,9 +2,10 @@ import { pdeepeq, deepeq } from './util2';
 
 interface Test {
   msg: string,
-  fn: () => void | string | undefined,
+  fn: () => Promise<any> | void | string | undefined,
   err? : string,
-  fail?: string
+  fail?: string,
+  pending?: true
 }
 
 function testFailed(t: Test) {
@@ -54,6 +55,45 @@ export const tMo = (() => {
 })();
 
 export function runtests() {
+  let laters: Array<Test> = [];
+
+  function maybeDone() {
+    if (!laters.some(_ => _.pending)) {
+
+      let failed = testOnly
+        .filter(_ => !!_.fail)
+        .map(testFailed)
+
+      let errored = testOnly
+        .filter(_ => !!_.err)
+        .map(testThrowed);
+
+      console.log(`done ${testOnly.length} / ${failed.length} failed`);
+    }
+  }
+  
+  function checkLater(test: Test) {
+    test.pending = true;
+    laters.push(test);
+
+    let onThen = (msg?: string) => {
+
+      if (msg) {
+        test.fail = msg;
+      }
+      delete test.pending;
+
+      maybeDone();      
+    };
+
+    let onCatch = (err: any) => {
+      test.err = `Promise rejected: ${err}`;
+      delete test.pending;
+      maybeDone();
+    }
+    return [onThen, onCatch];
+  }
+  
   let errs = [];
 
   let testOnly = onlyset.length > 0 ? onlyset : stset ;
@@ -63,25 +103,22 @@ export function runtests() {
       testBegin(_);
       let msg = _.fn();
       if (msg) {
-        _.fail = msg;
+        if (typeof msg === 'string') {
+          _.fail = msg;          
+        } else if (msg.then) {
+          let [onThen, onCatch] = checkLater(_);
+          msg.then(onThen)
+            .catch(onCatch);
+        }
       }
     } catch (e) {
       _.err = e;
     }
   });
-
-  let failed = testOnly
-    .filter(_ => !!_.fail)
-    .map(testFailed)
-
-  let errored = testOnly
-    .filter(_ => !!_.err)
-    .map(testThrowed);
-
-  console.log(`done ${testOnly.length} / ${failed.length} failed`);
+  maybeDone();
 }
 
-export function it(msg: string, fn: () => void | string | undefined = () => {}): void {
+export function it(msg: string, fn: () => Promise<any> | void | string | undefined = () => {}): void {
   let test: Test = {
     msg,
     fn
@@ -90,14 +127,13 @@ export function it(msg: string, fn: () => void | string | undefined = () => {}):
   stset.push(test);
 }
 
-it.only = (msg: string, fn: () => void | string | undefined): void => {
+it.only = (msg: string, fn: () => Promise<any> | void | string | undefined): void => {
   let test: Test = {
     msg,
     fn
   }
   onlyset.push(test);
 }
-
 
 export function jss(o: any, msg?: string): void {
   console.log(JSON.stringify(o), msg);

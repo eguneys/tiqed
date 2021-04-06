@@ -4,8 +4,25 @@ export default function() {
 
   tMo(moduleA)
   tMo(moduleB);
+  tMo(moduleP);
 
   run();
+}
+
+function moduleP() {
+  
+  it('handles promise', () => {
+    return Promise.resolve();
+  });
+  
+  it('handles error', () => {
+    return Promise.resolve('slkdfj');
+  });
+
+  it('handles rejection', () => {
+    return Promise.reject();
+  });
+
 }
 
 

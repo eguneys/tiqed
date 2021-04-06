@@ -34,6 +34,18 @@ Tiqed provides utility functions for testing.
 
       it.only('only run this', () => {});
 
+      it('waits for promise', () => {
+        return Promise.resolve();
+        });
+
+      it('fails if promise returns a value', () => {
+        return Promise.resolve('fail');
+      });
+
+      it('fails if promise rejects', () => {
+        return Promise.reject();
+      });
+
     }
 
     function testModuleB() {}
