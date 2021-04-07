@@ -76,10 +76,15 @@ export function runtests() {
     test.pending = true;
     laters.push(test);
 
-    let onThen = (msg?: string) => {
+    let onThen = (res: any) => {
 
-      if (msg) {
-        test.fail = msg;
+      if (typeof res === 'string') {
+        test.fail = res;
+      } else if (Array.isArray(res)) {
+        let msg = res.find(_ => typeof _ === 'string');
+        if (msg) {
+          test.fail = msg;
+        }
       }
       delete test.pending;
 

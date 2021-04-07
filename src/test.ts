@@ -1,4 +1,4 @@
-import { tMo, run, it } from './util';
+import { tMo, run, it, qed } from './util';
 
 export default function() {
 
@@ -22,6 +22,14 @@ function moduleP() {
   it('handles rejection', () => {
     return Promise.reject();
   });
+
+  it.only('handles promise all', () =>
+    Promise.all([
+      Promise.reject(3),
+      Promise.reject(4),
+    ].map(_ => _.catch(_ => {
+      qed('ok', _, 3)
+    }))));
 
 }
 
